@@ -36,8 +36,10 @@ public class UpdateUserFunctionHandler {
     try {
       UUID userId = UUID.fromString(userIdString);
       UserDTO updatedUser = userService.updateUser(userId, userDTOOptional.get());
+
       return request.createResponseBuilder(HttpStatus.OK)
           .body(updatedUser)
+          .header("Content-Type", "application/json")
           .build();
     } catch (IllegalArgumentException e) {
       return request.createResponseBuilder(HttpStatus.BAD_REQUEST)
