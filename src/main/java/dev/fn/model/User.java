@@ -1,6 +1,7 @@
 package dev.fn.model;
 
-import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -23,7 +24,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "app_users")
+@Table(name = "users")
 public class User {
   @Id
   @GeneratedValue(strategy = GenerationType.UUID)
@@ -42,18 +43,18 @@ public class User {
   private Role role;
 
   @Column(name = "created_at", updatable = false)
-  private LocalDateTime createdAt;
+  private ZonedDateTime createdAt;
 
   @Column(name = "updated_at")
-  private LocalDateTime updatedAt;
+  private ZonedDateTime updatedAt;
 
   @PrePersist
   protected void onCreate() {
-    createdAt = LocalDateTime.now();
+    createdAt = ZonedDateTime.now(ZoneOffset.UTC);
   }
 
   @PreUpdate
   protected void onUpdate() {
-    updatedAt = LocalDateTime.now();
+    updatedAt = ZonedDateTime.now(ZoneOffset.UTC);
   }
 }
