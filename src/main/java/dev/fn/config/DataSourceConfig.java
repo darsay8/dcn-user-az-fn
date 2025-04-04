@@ -28,9 +28,9 @@ public class DataSourceConfig {
   @Bean
   public DataSource dataSource() throws SQLException {
     OracleDataSource dataSource = new OracleDataSource();
-    dataSource.setURL(System.getenv("SPRING_DATASOURCE_URL"));
     dataSource.setUser(System.getenv("ORACLE_USERNAME"));
     dataSource.setPassword(System.getenv("ORACLE_PASSWORD"));
+    dataSource.setURL(System.getenv("ORACLE_DATASOURCE_URL"));
     return dataSource;
   }
 

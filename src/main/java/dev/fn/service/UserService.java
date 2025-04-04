@@ -32,7 +32,8 @@ public class UserService {
 
     User savedUser = userRepository.save(user);
 
-    return new UserDTO(savedUser.getUserId(), savedUser.getUsername(), savedUser.getEmail(), null, savedUser.getRole());
+    return new UserDTO(savedUser.getUserId(), savedUser.getUsername(), savedUser.getEmail(), savedUser.getPassword(),
+        savedUser.getRole());
 
   }
 
@@ -40,13 +41,14 @@ public class UserService {
     var user = userRepository.findById(id).orElse(new User());
 
     return new UserDTO(user.getUserId(),
-        user.getUsername(), user.getEmail(), null, user.getRole());
+        user.getUsername(), user.getEmail(), user.getPassword(), user.getRole());
   }
 
   public List<UserDTO> getAllUsers() {
     List<User> users = userRepository.findAll();
     return users.stream()
-        .map(user -> new UserDTO(user.getUserId(), user.getUsername(), user.getEmail(), null, user.getRole()))
+        .map(user -> new UserDTO(user.getUserId(), user.getUsername(), user.getEmail(), user.getPassword(),
+            user.getRole()))
         .toList();
   }
 
@@ -63,7 +65,7 @@ public class UserService {
               userRepository.save(existingUser).getUserId(),
               existingUser.getUsername(),
               existingUser.getEmail(),
-              null,
+              existingUser.getPassword(),
               existingUser.getRole());
         })
         .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
@@ -78,6 +80,6 @@ public class UserService {
   }
 
   public boolean verifyPassword(String rawPassword, String storedHashedPassword) {
-    return passwordEncoder.matches(rawPassword, storedHashedPassword); // Compare password hashes
+    return passwordEncoder.matches(rawPassword, storedHashedPassword);
   }
 }
