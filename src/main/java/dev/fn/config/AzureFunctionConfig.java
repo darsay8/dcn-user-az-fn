@@ -38,6 +38,11 @@ public class AzureFunctionConfig {
   }
 
   @Bean
+  public Function<UUID, UserDTO> getAllUsersFunctionGraphQL() {
+    return userId -> userService.getUser(userId);
+  }
+
+  @Bean
   public BiFunction<UUID, UserDTO, UserDTO> updateUserFunction() {
     return (id, user) -> userService.updateUser(id, user);
   }

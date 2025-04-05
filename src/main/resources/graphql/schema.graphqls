@@ -1,0 +1,30 @@
+enum Role {
+  USER
+  ADMIN
+}
+
+type UserDTO {
+  userId: ID!
+  username: String!
+  email: String!
+  password: String!
+  role: Role!
+}
+
+type Query {
+  getUser(id: ID!): UserDTO
+  getAllUsers: [UserDTO]!
+}
+
+type Mutation {
+  saveUser(input: UserInput!): UserDTO!
+  updateUser(id: ID!, input: UserInput!): UserDTO!
+  deleteUser(id: ID!): Boolean!
+}
+
+input UserInput {
+  username: String!
+  email: String!
+  password: String!
+  role: Role!
+}

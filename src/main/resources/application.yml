@@ -1,6 +1,7 @@
 spring:
   application:
     name: fn
+
   jpa:
     show-sql: true
     generate-ddl: true
@@ -9,8 +10,10 @@ spring:
         dialect: org.hibernate.dialect.OracleDialect
     hibernate:
       ddl-auto: create
+
 server:
   port: ${PORT}
+
 logging:
   level:
     root: INFO
