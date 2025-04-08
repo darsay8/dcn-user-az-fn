@@ -88,6 +88,12 @@
       <version>14.0.0</version>
     </dependency>
 
+    <dependency>
+      <groupId>org.projectlombok</groupId>
+      <artifactId>lombok</artifactId>
+      <version>1.18.34</version>
+    </dependency>
+
     <!-- Oracle JDBC Driver -->
     <dependency>
       <groupId>com.oracle.database.jdbc</groupId>
@@ -111,12 +117,6 @@
       <groupId>com.oracle.database.security</groupId>
       <artifactId>osdt_cert</artifactId>
       <version>21.17.0.0</version>
-    </dependency>
-
-    <dependency>
-      <groupId>org.projectlombok</groupId>
-      <artifactId>lombok</artifactId>
-      <version>1.18.34</version>
     </dependency>
 
     <!-- Test -->

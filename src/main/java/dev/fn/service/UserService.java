@@ -3,9 +3,12 @@ package dev.fn.service;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import dev.fn.model.Role;
+import dev.fn.model.RoleDTO;
 import dev.fn.model.User;
 import dev.fn.model.UserDTO;
 import dev.fn.repository.UserRepository;
+import dev.fn.repository.RoleRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -18,68 +21,86 @@ import java.util.UUID;
 public class UserService {
 
   private final UserRepository userRepository;
+  private final RoleRepository roleRepository;
   private final PasswordEncoder passwordEncoder;
 
   public UserDTO saveUser(UserDTO userDTO) {
     String encryptedPassword = passwordEncoder.encode(userDTO.getPassword());
 
+    Role role = roleRepository.findById(userDTO.getRole().getRoleId())
+        .orElseThrow(() -> new RuntimeException("Role not found"));
+
     var user = User.builder()
         .username(userDTO.getUsername())
         .email(userDTO.getEmail())
         .password(encryptedPassword)
-        .role(userDTO.getRole())
+        .role(role)
         .build();
 
     User savedUser = userRepository.save(user);
-
-    return new UserDTO(savedUser.getUserId(), savedUser.getUsername(), savedUser.getEmail(), savedUser.getPassword(),
-        savedUser.getRole());
-
+    return toDTO(savedUser);
   }
 
   public UserDTO getUser(UUID id) {
-    var user = userRepository.findById(id).orElse(new User());
-
-    return new UserDTO(user.getUserId(),
-        user.getUsername(), user.getEmail(), user.getPassword(), user.getRole());
+    return userRepository.findById(id)
+        .map(this::toDTO)
+        .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
   }
 
   public List<UserDTO> getAllUsers() {
-    List<User> users = userRepository.findAll();
-    return users.stream()
-        .map(user -> new UserDTO(user.getUserId(), user.getUsername(), user.getEmail(), user.getPassword(),
-            user.getRole()))
+    return userRepository.findAll().stream()
+        .map(this::toDTO)
         .toList();
   }
 
   public UserDTO updateUser(UUID id, UserDTO userDTO) {
     return userRepository.findById(id)
         .map(existingUser -> {
-          existingUser.setUsername(userDTO.getUsername());
-          existingUser.setEmail(userDTO.getEmail());
+
+          if (userDTO.getUsername() != null) {
+            existingUser.setUsername(userDTO.getUsername());
+          }
+
+          if (userDTO.getEmail() != null) {
+            existingUser.setEmail(userDTO.getEmail());
+          }
+
           if (userDTO.getPassword() != null) {
             existingUser.setPassword(passwordEncoder.encode(userDTO.getPassword()));
           }
-          existingUser.setRole(userDTO.getRole());
-          return new UserDTO(
-              userRepository.save(existingUser).getUserId(),
-              existingUser.getUsername(),
-              existingUser.getEmail(),
-              existingUser.getPassword(),
-              existingUser.getRole());
+
+          if (userDTO.getPassword() != null) {
+            existingUser.setPassword(passwordEncoder.encode(userDTO.getPassword()));
+          }
+
+          if (userDTO.getRole() != null) {
+            Role role = roleRepository.findById(userDTO.getRole().getRoleId())
+                .orElseThrow(() -> new RuntimeException("Role not found"));
+            existingUser.setRole(role);
+          }
+
+          return toDTO(userRepository.save(existingUser));
         })
         .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
   }
 
   public void deleteUser(UUID id) {
-    if (userRepository.existsById(id)) {
-      userRepository.deleteById(id);
-    } else {
+    if (!userRepository.existsById(id)) {
       throw new RuntimeException("User not found with id: " + id);
     }
+    userRepository.deleteById(id);
   }
 
   public boolean verifyPassword(String rawPassword, String storedHashedPassword) {
     return passwordEncoder.matches(rawPassword, storedHashedPassword);
+  }
+
+  private UserDTO toDTO(User user) {
+    return new UserDTO(
+        user.getUserId(),
+        user.getUsername(),
+        user.getEmail(),
+        user.getPassword(),
+        new RoleDTO(user.getRole().getRoleId(), user.getRole().getName()));
   }
 }
