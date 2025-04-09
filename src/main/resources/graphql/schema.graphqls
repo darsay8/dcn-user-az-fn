@@ -1,5 +1,5 @@
 type RoleDTO {
-  id: ID!
+  roleId: ID!
   name: String!
 }
 
@@ -20,7 +20,7 @@ type Query {
 
 type Mutation {
   saveUser(input: UserInput!): UserDTO!
-  updateUser(id: ID!, input: UserInput!): UserDTO!
+  updateUser(id: ID!, input: UserUpdateInput!): UserDTO!
   deleteUser(id: ID!): Boolean!
   saveRole(input: RoleInput!): RoleDTO!
   updateRole(id: ID!, input: RoleInput!): RoleDTO!
@@ -36,4 +36,11 @@ input UserInput {
   email: String!
   password: String!
   roleId: ID!
+}
+
+input UserUpdateInput {
+  username: String
+  email: String
+  password: String
+  roleId: ID
 }

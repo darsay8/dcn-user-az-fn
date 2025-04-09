@@ -1,6 +1,7 @@
 package dev.fn.resolver;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
@@ -30,18 +31,27 @@ public class RoleGraphQLResolver implements GraphQLQueryResolver, GraphQLMutatio
   }
 
   @MutationMapping
-  public RoleDTO saveRole(@Argument("input") RoleDTO input) {
-    return roleService.save(input);
+  public RoleDTO saveRole(@Argument("input") Map<String, Object> input) {
+    return roleService.save(mapToRoleDTO(input));
   }
 
   @MutationMapping
-  public RoleDTO updateRole(@Argument Long id, @Argument("input") RoleDTO input) {
-    return roleService.update(id, input);
+  public RoleDTO updateRole(@Argument Long id, @Argument("input") Map<String, Object> input) {
+    return roleService.update(id, mapToRoleDTO(input));
   }
 
   @MutationMapping
   public Boolean deleteRole(@Argument Long id) {
     roleService.delete(id);
     return true;
+  }
+
+  private RoleDTO mapToRoleDTO(Map<String, Object> input) {
+    if (input == null) {
+      return null;
+    }
+    RoleDTO roleDTO = new RoleDTO();
+    roleDTO.setName((String) input.get("name"));
+    return roleDTO;
   }
 }

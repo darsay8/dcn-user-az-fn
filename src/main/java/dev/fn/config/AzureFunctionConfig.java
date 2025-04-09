@@ -26,7 +26,7 @@ public class AzureFunctionConfig {
     this.roleService = roleService;
   }
 
-  // Role Functions
+  // >>>>>>>>>>>>>>>>> Role HTTP Functions
 
   @Bean
   public Function<RoleDTO, RoleDTO> createRoleFunction() {
@@ -53,7 +53,34 @@ public class AzureFunctionConfig {
     return id -> roleService.delete(id);
   }
 
-  // User Functions
+  // >>>>>>>>>>>>>>>>> Role GraphQL Functions
+
+  @Bean
+  Function<RoleDTO, RoleDTO> createRoleFunctionGraphQL() {
+    return role -> roleService.save(role);
+  }
+
+  @Bean
+  public Function<Long, RoleDTO> getRoleFunctionGraphQL() {
+    return roleId -> roleService.findById(roleId);
+  }
+
+  @Bean
+  public Supplier<List<RoleDTO>> getAllRolesFunctionGraphQL() {
+    return () -> roleService.findAll();
+  }
+
+  @Bean
+  public BiFunction<Long, RoleDTO, RoleDTO> updateRoleFunctionGraphQL() {
+    return (id, role) -> roleService.update(id, role);
+  }
+
+  @Bean
+  public Consumer<Long> deleteRoleFunctionGraphQL() {
+    return id -> roleService.delete(id);
+  }
+
+  // >>>>>>>>>>>>>>>>> User HTTP Functions
 
   @Bean
   public Function<UserDTO, UserDTO> createUserFunction() {
@@ -71,17 +98,39 @@ public class AzureFunctionConfig {
   }
 
   @Bean
-  public Function<UUID, UserDTO> getAllUsersFunctionGraphQL() {
-    return userId -> userService.getUser(userId);
-  }
-
-  @Bean
   public BiFunction<UUID, UserDTO, UserDTO> updateUserFunction() {
     return (id, user) -> userService.updateUser(id, user);
   }
 
   @Bean
   public Consumer<UUID> deleteUserFunction() {
+    return id -> userService.deleteUser(id);
+  }
+
+  // >>>>>>>>>>>>>>>>> User GraphQL Functions
+
+  @Bean
+  public Function<UserDTO, UserDTO> createUserFunctionGraphQL() {
+    return user -> userService.saveUser(user);
+  }
+
+  @Bean
+  public Function<UUID, UserDTO> getUserFunctionGraphQL() {
+    return userId -> userService.getUser(userId);
+  }
+
+  @Bean
+  public Supplier<List<UserDTO>> getAllUsersFunctionGraphQL() {
+    return () -> userService.getAllUsers();
+  }
+
+  @Bean
+  public BiFunction<UUID, UserDTO, UserDTO> updateUserFunctionGraphQL() {
+    return (id, user) -> userService.updateUser(id, user);
+  }
+
+  @Bean
+  public Consumer<UUID> deleteUserFunctionGraphQL() {
     return id -> userService.deleteUser(id);
   }
 }
