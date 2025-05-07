@@ -10,6 +10,8 @@ import dev.fn.model.UserDTO;
 import dev.fn.service.UserService;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,25 +38,32 @@ public class CreateUserFunctionHandler {
 
     Optional<UserDTO> userDTOOptional = request.getBody();
 
-    if (userDTOOptional.isPresent()) {
-      context.getLogger().info("User data is present in the request body.");
-    } else {
-      context.getLogger().warning("User data is missing in the request body.");
+    if (!userDTOOptional.isPresent()) {
+      return request.createResponseBuilder(HttpStatus.BAD_REQUEST)
+          .body("User data is missing or invalid.")
+          .header("Content-Type", "application/json")
+          .build();
     }
 
     userDTOOptional.ifPresent(u -> context.getLogger().info("Received user: " + u.toString()));
     context.getLogger().info("Function name: " + context.getFunctionName());
 
-    if (userDTOOptional.isPresent()) {
+    try {
       UserDTO savedUser = userService.saveUser(userDTOOptional.get());
 
+      Map<String, Object> response = new HashMap<>();
+      response.put("user", savedUser);
+      response.put("roleStatus", "PENDING_ASSIGNMENT");
+      response.put("message", "User created successfully. Role assignment in progress.");
+
       return request.createResponseBuilder(HttpStatus.CREATED)
-          .body(savedUser)
+          .body(response)
           .header("Content-Type", "application/json")
           .build();
-    } else {
-      return request.createResponseBuilder(HttpStatus.BAD_REQUEST)
-          .body("User data is missing or invalid.")
+    } catch (Exception e) {
+      context.getLogger().severe("Error creating user: " + e.getMessage());
+      return request.createResponseBuilder(HttpStatus.INTERNAL_SERVER_ERROR)
+          .body("Error creating user: " + e.getMessage())
           .header("Content-Type", "application/json")
           .build();
     }

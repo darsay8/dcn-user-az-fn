@@ -49,6 +49,13 @@ public class RoleService {
     roleRepository.deleteById(id);
   }
 
+  public Role getDefaultRole() {
+    return roleRepository.findByName("ROLE_USER")
+        .orElseGet(() -> roleRepository.save(Role.builder()
+            .name("ROLE_USER")
+            .build()));
+  }
+
   private RoleDTO toDTO(Role role) {
     return RoleDTO.builder()
         .roleId(role.getRoleId())

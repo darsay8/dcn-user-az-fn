@@ -14,5 +14,6 @@ public class UserDTO {
   private String username;
   private String email;
   private String password;
-  private RoleDTO role;
+  @Builder.Default
+  private RoleDTO role = null;
 }

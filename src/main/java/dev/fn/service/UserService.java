@@ -3,6 +3,12 @@ package dev.fn.service;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.azure.core.credential.AzureKeyCredential;
+import com.azure.core.util.BinaryData;
+import com.azure.messaging.eventgrid.EventGridEvent;
+import com.azure.messaging.eventgrid.EventGridPublisherClient;
+import com.azure.messaging.eventgrid.EventGridPublisherClientBuilder;
+
 import dev.fn.model.Role;
 import dev.fn.model.RoleDTO;
 import dev.fn.model.User;
@@ -24,11 +30,53 @@ public class UserService {
   private final RoleRepository roleRepository;
   private final PasswordEncoder passwordEncoder;
 
+  private final RoleService roleService;
+
   public UserDTO saveUser(UserDTO userDTO) {
     String encryptedPassword = passwordEncoder.encode(userDTO.getPassword());
 
-    Role role = roleRepository.findById(userDTO.getRole().getRoleId())
-        .orElseThrow(() -> new RuntimeException("Role not found"));
+    var user = User.builder()
+        .username(userDTO.getUsername())
+        .email(userDTO.getEmail())
+        .password(encryptedPassword)
+        .build();
+
+    User savedUser = userRepository.save(user);
+
+    publishRoleAssignmentEvent(savedUser.getUserId());
+
+    return toDTO(savedUser);
+  }
+
+  private void publishRoleAssignmentEvent(UUID userId) {
+    log.info("Publishing role assignment event for user: {}", userId);
+
+    try {
+      EventGridPublisherClient<EventGridEvent> client = new EventGridPublisherClientBuilder()
+          .endpoint(System.getenv("TOPIC_ROLE_ENDPOINT"))
+          .credential(new AzureKeyCredential(System.getenv("TOPIC_ROLE_KEY")))
+          .buildEventGridEventPublisherClient();
+
+      EventGridEvent event = new EventGridEvent(
+          "user/role/assign",
+          "User.Role.Assignment",
+          BinaryData.fromObject(userId.toString()),
+          "1.0");
+
+      client.sendEvent(event);
+      log.info("Role assignment event published successfully for user: {}", userId);
+    } catch (Exception e) {
+      log.error("Error publishing role assignment event: {}", e.getMessage(), e);
+    }
+  }
+
+  public UserDTO saveUserWithRoleAssigned(UserDTO userDTO) {
+    String encryptedPassword = passwordEncoder.encode(userDTO.getPassword());
+
+    Role role = userDTO.getRole() != null
+        ? roleRepository.findById(userDTO.getRole().getRoleId())
+            .orElseGet(roleService::getDefaultRole)
+        : roleService.getDefaultRole();
 
     var user = User.builder()
         .username(userDTO.getUsername())
@@ -95,12 +143,25 @@ public class UserService {
     return passwordEncoder.matches(rawPassword, storedHashedPassword);
   }
 
+  public void assignRole(UUID userId, Long roleId) {
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> new RuntimeException("User not found"));
+
+    Role role = roleRepository.findById(roleId)
+        .orElseThrow(() -> new RuntimeException("Role not found"));
+
+    user.setRole(role);
+    userRepository.save(user);
+    log.info("Role {} assigned to user {}", roleId, userId);
+  }
+
   private UserDTO toDTO(User user) {
-    return new UserDTO(
-        user.getUserId(),
-        user.getUsername(),
-        user.getEmail(),
-        user.getPassword(),
-        new RoleDTO(user.getRole().getRoleId(), user.getRole().getName()));
+    return UserDTO.builder()
+        .userId(user.getUserId())
+        .username(user.getUsername())
+        .email(user.getEmail())
+        .password(user.getPassword())
+        .role(user.getRole() != null ? new RoleDTO(user.getRole().getRoleId(), user.getRole().getName()) : null)
+        .build();
   }
 }
