@@ -35,8 +35,7 @@ public class UserRoleAssignmentSubFunction {
 
       ObjectMapper mapper = new ObjectMapper();
       JsonNode root = mapper.readTree(eventData);
-      String extractedUserId = root.path("data").asText();
-      // String extractedUserId = root.path("data").path("userId").asText();
+      String extractedUserId = root.path("data").path("userId").asText();
 
       userService.assignRole(UUID.fromString(extractedUserId), defaultRole.getRoleId());
 

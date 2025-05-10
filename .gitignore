@@ -42,3 +42,6 @@ yarn.lock
 node_modules/
 req.http
 wallet/
+
+queries.sql
+http
