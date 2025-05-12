@@ -3,18 +3,20 @@ package dev.fn.function;
 import com.microsoft.azure.functions.*;
 import com.microsoft.azure.functions.annotation.*;
 import dev.fn.service.RoleService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import java.util.HashMap;
+import java.util.Map;
+
 import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class DeleteRoleFunctionHandler {
 
   private final RoleService roleService;
-
-  public DeleteRoleFunctionHandler(RoleService roleService) {
-    this.roleService = roleService;
-  }
 
   @FunctionName("deleteRoleFunction")
   public HttpResponseMessage execute(
@@ -22,25 +24,46 @@ public class DeleteRoleFunctionHandler {
           HttpMethod.DELETE }, authLevel = AuthorizationLevel.ANONYMOUS) HttpRequestMessage<Void> request,
       ExecutionContext context) {
 
-    String roleIdString = request.getQueryParameters().get("roleId");
-
-    if (roleIdString == null) {
-      return request.createResponseBuilder(HttpStatus.BAD_REQUEST)
-          .body("Missing roleId parameter")
-          .build();
-    }
+    String roleIdStr = request.getQueryParameters().get("roleId");
 
     try {
-      Long roleId = Long.parseLong(roleIdString);
-      roleService.delete(roleId);
-      return request.createResponseBuilder(HttpStatus.NO_CONTENT).build();
-    } catch (IllegalArgumentException e) {
-      return request.createResponseBuilder(HttpStatus.BAD_REQUEST)
-          .body("Invalid roleId format")
-          .build();
+      if (roleIdStr == null || roleIdStr.isBlank()) {
+        throw new IllegalArgumentException("Missing required query parameter: roleId");
+      }
+
+      Long roleId = Long.parseLong(roleIdStr);
+      context.getLogger().info("Deleting role with ID: {}" + roleId);
+
+      boolean deletedImmediately = roleService.delete(roleId);
+
+      Map<String, String> response = new HashMap<>();
+      response.put("roleId", roleIdStr);
+      response.put("status", "SUCCESS");
+
+      if (deletedImmediately) {
+        response.put("message", "Role deleted immediately. No users required reassignment.");
+        return request.createResponseBuilder(HttpStatus.NO_CONTENT)
+            .header("Content-Type", "application/json")
+            .body(response)
+            .build();
+      } else {
+        response.put("message", "Role deleted successfully after reassigning users.");
+        return request.createResponseBuilder(HttpStatus.OK)
+            .header("Content-Type", "application/json")
+            .body(response)
+            .build();
+      }
+
     } catch (RuntimeException e) {
-      return request.createResponseBuilder(HttpStatus.NOT_FOUND)
-          .body(e.getMessage())
+      log.error("Error during role deletion: {}", e.getMessage(), e);
+      Map<String, String> errorResponse = new HashMap<>();
+      errorResponse.put("message", e.getMessage());
+      errorResponse.put("roleId", roleIdStr != null ? roleIdStr : "unknown");
+      errorResponse.put("status", "ERROR");
+
+      return request.createResponseBuilder(HttpStatus.BAD_REQUEST)
+          .header("Content-Type", "application/json")
+          .body(errorResponse)
           .build();
     }
   }

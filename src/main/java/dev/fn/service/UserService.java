@@ -18,7 +18,9 @@ import dev.fn.repository.RoleRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Slf4j
@@ -57,16 +59,20 @@ public class UserService {
           .credential(new AzureKeyCredential(System.getenv("TOPIC_ROLE_KEY")))
           .buildEventGridEventPublisherClient();
 
+      Map<String, Object> eventData = new HashMap<>();
+      eventData.put("userId", userId.toString());
+
       EventGridEvent event = new EventGridEvent(
-          "user/role/assign",
-          "User.Role.Assignment",
-          BinaryData.fromObject(userId.toString()),
+          "app/roles/assign",
+          "App.Role.Assignment",
+          BinaryData.fromObject(eventData),
           "1.0");
 
       client.sendEvent(event);
       log.info("Role assignment event published successfully for user: {}", userId);
     } catch (Exception e) {
       log.error("Error publishing role assignment event: {}", e.getMessage(), e);
+      throw new RuntimeException("Failed to publish role assignment event", e);
     }
   }
 
